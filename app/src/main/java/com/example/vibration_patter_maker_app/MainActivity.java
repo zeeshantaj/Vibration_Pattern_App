@@ -5,46 +5,37 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.view.animation.ScaleAnimation;
 import android.widget.Button;
-import android.widget.Toast;
+import android.widget.SeekBar;
 
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import pl.bclogic.pulsator4droid.library.PulsatorLayout;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button vibrationBtn;
     private Vibrator vibrator;
     private List<Long> vibrationPattern;
     private boolean isRecording = false;
-
     private Handler handler = new Handler();
     private static final int VIBRATION_INTERVAL = 100;
     private Button playBtn,stopBtn;
     private long touchStartTime;
 
-    private List<Long> wave = new ArrayList<>();
+    private List<Long> touchTime = new ArrayList<>();
     private List<Long> waveForVibrate = new ArrayList<>();
-    private List<Long> interval=new ArrayList<>();
+    private List<Long> touchReleaseTime =new ArrayList<>();
 
     long touchEndTime;
-
-    long releaseTime = -1l;
-    long pressTime=-1l;
-    long duration1 = 1l;
+    private long lastTouchEndTime = 0;
+    private CustomSeekBar seekBar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         // vibrationBtn = findViewById(R.id.vibrationBtn);
         playBtn = findViewById(R.id.playBtn);
         stopBtn = findViewById(R.id.stopBtn);
+        seekBar = findViewById(R.id.customSeek);
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         vibrationPattern = new ArrayList<>();
 
@@ -80,37 +72,39 @@ public class MainActivity extends AppCompatActivity {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        startRecording();
-                        touchStartTime = System.currentTimeMillis(); // Record the start time
+                            startRecording();
+                            touchStartTime = System.currentTimeMillis(); // Record the start time
+                            Log.e("touch", "touch");
+                        if (touchEndTime == 0) {
+                            touchEndTime = touchStartTime;
+                        }
+                            long dura = touchStartTime - touchEndTime;
+                            Log.e("MyApp", "dura" + dura);
+                            touchReleaseTime.add(dura);
+                            return true;
 
-                        //wave.add(dura);
-
-
-                        pressTime = System.currentTimeMillis();
-                        if(releaseTime != -1l)
-                            duration1 = pressTime - releaseTime;
-                        Log.e("MyApp","duration"+duration1);
-                        return true;
                     case MotionEvent.ACTION_UP:
                         touchEndTime = System.currentTimeMillis();
                         long duration = touchEndTime - touchStartTime; // Calculate the touch duration
-
-                        interval.add(duration);
-                        wave.add(duration);
+                        Log.e("touch", "release" + duration);
+                        touchTime.add(duration);
+                        //
                         vibrationPattern.add(duration * 1000); // Convert to microseconds and add to the list
+
                         stopRecordingAndSave();
                         return true;
                 }
                 return true;
+
             }
         });
-        //pulsator.stop();
+
 
         playBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 play();
-                createWave();
+                //createWave();
             }
         });
         stopBtn.setOnClickListener(new View.OnClickListener() {
@@ -144,20 +138,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void createWave() {
-        for (int i = 0; i < wave.size(); i++) {
-            if (i % 2 == 0) {
-                // Add the timestamp at even positions (0, 2, 4, ...)
-                waveForVibrate.add(wave.get(i));
-            } else {
-                // Add the duration at odd positions (1, 3, 5, ...)
-                waveForVibrate.add(interval.get(i));
-            }
-
-            Log.e("MyApp","waveForVibrateElements"+waveForVibrate.get(i));
-        }
-        Log.e("MyApp","waveForVibrate"+waveForVibrate.size());
-    }
 
     private void startRecording() {
         if (!isRecording) {
@@ -181,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
             vibrator.vibrate(VIBRATION_INTERVAL); // Vibrate at a regular interval
             vibrationPattern.add((long) VIBRATION_INTERVAL); // Record the duration
             // Schedule the next vibration and pattern recording
+
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -191,16 +172,40 @@ public class MainActivity extends AppCompatActivity {
     }
     private void play(){
 
-        createWave();
-        Log.e("MyApp","waveForPlay"+waveForVibrate.size());
-        long[] vibrationPatternArray = new long[waveForVibrate.size()];
+        int maxSize = Math.max(touchReleaseTime.size(), touchTime.size());
 
+        for (int i = 0; i < maxSize; i++) {
+            Log.e("MyApp","touchTime"+touchTime.get(i));
+            Log.e("MyApp","touchReleaseTime"+touchReleaseTime.get(i));
+//            if (i % 2 == 0) {
+//                // Add the timestamp at even positions (0, 2, 4, ...)
+//                waveForVibrate.add(touchReleaseTime.get(i));
+//            } else {
+//                // Add the duration at odd positions (1, 3, 5, ...)
+//                waveForVibrate.add(touchTime.get(i));
+//            }
+
+            if (i < touchTime.size()){
+                waveForVibrate.add(touchReleaseTime.get(i));
+            }
+            if (i < touchReleaseTime.size()) {
+                waveForVibrate.add(touchTime.get(i));
+            }
+         }
+
+        Log.e("MyApp","waveSize"+waveForVibrate.size());
+
+        long[] vibrationPatternArray = new long[waveForVibrate.size()];
+        Log.e("MyApp","vibrationArraySize"+vibrationPatternArray.length);
         for (int i = 0; i < waveForVibrate.size(); i++) {
             vibrationPatternArray[i] = waveForVibrate.get(i);
-            Log.e("MyApp","wave index "+vibrationPatternArray.length);
+            Log.e("MyApp","vibrationArraySizeElement"+vibrationPatternArray[i]);
+
         }
 
-        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        seekBar.setArray(vibrationPatternArray);
+
+
 
         if (vibrator.hasVibrator()) {
             vibrator.vibrate(vibrationPatternArray, -1);
@@ -209,11 +214,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void stop() {
         vibrator.cancel();
-        wave.clear();
-        interval.clear();
+        touchTime.clear();
+        touchReleaseTime.clear();
         waveForVibrate.clear();
-        ///vibrationPattern.clear();
-    }
+        touchEndTime = 0;
+        }
     private void startPulseAnimation(View view) {
         Animation pulseAnimation = new ScaleAnimation(1f, 1.1f, 1f, 1.1f,
                 Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);

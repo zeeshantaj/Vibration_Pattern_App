@@ -7,20 +7,6 @@
     tools:context=".MainActivity"
     android:background="@color/white">
 
-    <!--    <Button-->
-    <!--        android:id="@+id/vibrationBtn"-->
-    <!--        android:layout_width="200dp"-->
-    <!--        android:layout_height="200dp"-->
-    <!--        android:background="@drawable/btn_bg"-->
-    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent" />-->
-
-
-
-
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/vibrationBtn"
             android:layout_width="250dp"
@@ -40,6 +26,7 @@
         android:layout_marginStart="10dp"
         android:layout_marginBottom="20dp"
         android:text="play"
+        android:foreground="?android:selectableItemBackground"
         android:textStyle="bold"
         android:textColor="@color/lightBlue"
         android:background="@android:color/transparent"
@@ -47,14 +34,12 @@
         app:layout_constraintStart_toStartOf="parent" />
 
 
-    <SeekBar
+    <com.example.vibration_patter_maker_app.CustomSeekBar
+        android:id="@+id/customSeek"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:clickable="false"
         android:thumb="@null"
-        android:progressTint="@color/blue"
-        android:progressBackgroundTint="@color/lightBlue"
-        android:progress="10"
         app:layout_constraintBottom_toBottomOf="@+id/playBtn"
         app:layout_constraintEnd_toStartOf="@+id/stopBtn"
         app:layout_constraintStart_toEndOf="@+id/playBtn"
@@ -67,6 +52,7 @@
         android:layout_marginEnd="10dp"
         android:layout_marginBottom="20dp"
         android:text="stop"
+        android:foreground="?android:selectableItemBackground"
         android:textStyle="bold"
         android:textColor="@color/lightBlue"
         android:background="@android:color/transparent"
